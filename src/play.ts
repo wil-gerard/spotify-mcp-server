@@ -260,17 +260,27 @@ const createPlaylist = defineTool({
       // infers the owner from the token, so no profile lookup is needed.
       const result = await spotifyFetch<{
         id: string;
+        public?: boolean | null;
         external_urls: { spotify: string };
       }>('me/playlists', {
         method: 'POST',
         body: { name, description, public: isPublic },
       });
 
+      // Spotify sometimes ignores `public` on create, so enforce the requested
+      // visibility with a follow-up update when the response doesn't match.
+      if (result.public !== isPublic) {
+        await spotifyFetch(`playlists/${result.id}`, {
+          method: 'PUT',
+          body: { public: isPublic },
+        });
+      }
+
       return {
         content: [
           {
             type: 'text',
-            text: `Successfully created playlist "${name}"\nPlaylist ID: ${result.id}\nPlaylist URL: ${result.external_urls.spotify}`,
+            text: `Successfully created ${isPublic ? 'public' : 'private'} playlist "${name}"\nPlaylist ID: ${result.id}\nPlaylist URL: ${result.external_urls.spotify}`,
           },
         ],
       };

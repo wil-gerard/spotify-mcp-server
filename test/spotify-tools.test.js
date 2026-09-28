@@ -159,13 +159,39 @@ const cases = [
         body: { name: 'New Playlist', public: false },
         response: {
           id: 'playlist1',
+          public: false,
           external_urls: {
             spotify: 'https://open.spotify.com/playlist/playlist1',
           },
         },
       },
     ],
-    text: /Successfully created playlist/,
+    text: /Successfully created private playlist/,
+  },
+  {
+    name: 'createPlaylist',
+    label: 'corrects visibility Spotify ignored',
+    args: { name: 'New Playlist' },
+    http: [
+      {
+        url: 'me/playlists',
+        method: 'POST',
+        body: { name: 'New Playlist', public: false },
+        response: {
+          id: 'playlist1',
+          public: true,
+          external_urls: {
+            spotify: 'https://open.spotify.com/playlist/playlist1',
+          },
+        },
+      },
+      {
+        url: 'playlists/playlist1',
+        method: 'PUT',
+        body: { public: false },
+      },
+    ],
+    text: /Successfully created private playlist/,
   },
   {
     name: 'addTracksToPlaylist',
@@ -269,6 +295,23 @@ const cases = [
     text: /Test Playlist[\s\S]*Test User[\s\S]*3/,
   },
   {
+    name: 'getPlaylist',
+    label: 'reads the count from items',
+    args: { playlistId: 'playlist1' },
+    http: [
+      {
+        url: 'playlists/playlist1',
+        response: {
+          id: 'playlist1',
+          name: 'Test Playlist',
+          owner: { display_name: 'Test User' },
+          items: { total: 55 },
+        },
+      },
+    ],
+    text: /\*\*Tracks\*\*: 55/,
+  },
+  {
     name: 'updatePlaylist',
     args: { playlistId: 'playlist1', name: 'Renamed', public: false },
     http: [
@@ -321,7 +364,7 @@ const cases = [
 
 for (const mode of ['legacy', { pin: '2026-07-28' }]) {
   for (const scenario of cases) {
-    test(`${scenario.name} sends the expected Spotify request (${JSON.stringify(mode)})`, async (t) => {
+    test(`${scenario.name}${scenario.label ? ` (${scenario.label})` : ''} sends the expected Spotify request (${JSON.stringify(mode)})`, async (t) => {
       mockConfig(t);
       mockHttp(t, scenario.http);
       const client = await connect(t, mode);
