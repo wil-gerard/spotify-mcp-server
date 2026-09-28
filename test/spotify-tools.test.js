@@ -122,6 +122,28 @@ const cases = [
     text: /No top artists/,
   },
   {
+    name: 'getTopTracks',
+    label: 'without popularity',
+    http: [
+      {
+        url: 'me/top/tracks?time_range=medium_term&limit=20',
+        response: { items: [track] },
+      },
+    ],
+    text: /^(?![\s\S]*undefined)[\s\S]*1\. "Test Track" by Test Artist \(3:00\) - ID: track1/,
+  },
+  {
+    name: 'getTopArtists',
+    label: 'without genres or popularity',
+    http: [
+      {
+        url: 'me/top/artists?time_range=medium_term&limit=20',
+        response: { items: [{ id: 'artist1', name: 'Test Artist' }] },
+      },
+    ],
+    text: /1\. Test Artist - ID: artist1/,
+  },
+  {
     name: 'playMusic',
     args: { type: 'track', id: 'track1' },
     http: [
